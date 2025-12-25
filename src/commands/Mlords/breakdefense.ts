@@ -9,7 +9,7 @@ export default new Command()
 
         const defense = interaction.options.getNumber("totaldefense", true);
         const unit = interaction.options.getString("unit", true).toUpperCase();
-        const bonus = interaction.options.getNumber("bonusattack", true);
+        const bonus = interaction.options.getNumber("bonus", true);
 
         const multiplier = UNIT_MAP[unit];
         const realDefense = defense * multiplier;
@@ -18,11 +18,13 @@ export default new Command()
 
         const embed = new EmbedBuilder()
             .setTitle("🧮 Tropas necesarias")
-            .addFields(
-                { name: "🧱 Defensa Total", value: `\`${defense}${unit}\``, inline: true },
-                { name: "📈 Bono de Ataque", value: `\`${bonus}%\``, inline: true },
-                { name: "🪖 Tropas Necesarias", value: `\`${formatUnit(neededTroops)}\``, inline: true }
+            .setDescription(
+                `Tropas necesarias para romper una ciudad segun su defensa total\n` +
+                `- 🛡️ Defensa Total: \`${formatUnit(realDefense)}\`\n` +
+                `- 📈 Bono de Ataque: \`${bonus}%\`\n` +
+                `- 🪖 Tropas Necesarias: \`${formatUnit(neededTroops)}\``
             )
+
             .setFooter({ text: "Million Lords — Calculadora de Tropas Necesarias" })
             .setTimestamp()
             .setColor("Orange");
@@ -34,16 +36,16 @@ export default new Command()
     })
     .addNumberOption(opt =>
         opt.setName("totaldefense")
-            .setDescription("Defense amount (just the number)")
+            .setDescription("Defensa total de la ciudad (solo número)")
             .setRequired(true)
     )
     .addStringOption(opt =>
         opt.setName("unit")
-            .setDescription("Unit of defense (K, M, G, T, P)")
+            .setDescription("Unidad de defensa (K, M, G, T, P)")
             .setRequired(true)
     )
     .addNumberOption(opt =>
-        opt.setName("bonusattack")
-            .setDescription("Your attack bonus (%)")
+        opt.setName("bonus")
+            .setDescription("Bonus de ataque (%)")
             .setRequired(true)
     )

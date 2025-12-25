@@ -18,16 +18,16 @@ export default new Command()
         const needed = calculateNeededTroopsFromWallValue(wallValue, bonus);
 
         const embed = new EmbedBuilder()
-            .setTitle(`🪖 Tropas necesarias - Nivel ${level}`)
-            .addFields(
-                { name: "lvl", value: `\`${level}\``, inline: true },
-                { name: "Wall", value: `\`${entry.wall}\``, inline: true },
-                { name: "Bonus", value: `\`${bonus}%\``, inline: true },
-                { name: "needed troops", value: `\`${formatUnit(needed)}\``, inline: false }
-            )
+            .setTitle(`🪖 Tropas necesarias`)
+            .setDescription(
+                `Tropas necesarias para romper una ciudad segun nivel\n` +
+                `- 🏰 Nivel de Ciudad: \`${entry.level}\`\n` +
+                `- 🧱 Muro: \`${entry.wall}\`\n` +
+                `- 📈 Bonus de Ataque: \`${bonus}%\`\n` +
+                `- 🪖 Tropas Necesarias: \`${formatUnit(needed)}\``)
             .setFooter({ text: "Million Lords — Calculadora de Tropas Necesarias" })
             .setTimestamp()
-            .setColor("Green");
+            .setColor("DarkOrange");
 
         await interaction.reply({
             embeds: [embed],
