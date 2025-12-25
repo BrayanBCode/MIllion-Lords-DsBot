@@ -1,0 +1,27 @@
+{
+  "name": "million-lords-dsbot",
+  "version": "1.0.0",
+  "main": "index.js",
+  
+  "scripts": {
+    "clean": "rmdir /s /q dist",
+    "build": "npm run clean && tsc",
+    "start": "node dist/index.js",
+    "dev": "npm run build && npm run start"
+  },
+  
+  
+  "keywords": [],
+  "author": "_codu",
+  "license": "ISC",
+  "description": "Bot para million lords",
+  "dependencies": {
+    "discord.js": "^14.25.1",
+    "dotenv": "^17.2.3",
+    "tsconfig-paths": "^4.2.0",
+    "winston": "^3.18.3"
+  },
+  "devDependencies": {
+    "tsc-alias": "^1.8.16"
+  }
+}

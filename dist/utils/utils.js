@@ -1,0 +1,287 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.WALL_DATA = exports.UNIT_MAP = void 0;
+exports.parseWallValue = parseWallValue;
+exports.formatUnit = formatUnit;
+exports.calculateNeededTroopsFromWallValue = calculateNeededTroopsFromWallValue;
+exports.createEmbed = createEmbed;
+exports.calculatePower = calculatePower;
+const discord_js_1 = require("discord.js");
+exports.UNIT_MAP = {
+    Null: 1,
+    K: 1e3,
+    M: 1e6,
+    G: 1e9,
+    T: 1e12,
+    P: 1e15,
+};
+/**
+ * Convierte cadenas del tipo "23.9k", "41,3k", "936M", "1.14T" -> número
+ */
+function parseWallValue(text) {
+    if (!text)
+        return 0;
+    // Normalizar: quitar espacios, transformar coma decimal a punto, eliminar separadores de miles
+    let s = String(text).trim();
+    // Si hay letras mezcladas con coma decimal como "41,3k", convertir la coma por punto
+    // Pero si hay coma como separador de miles "1,143.3P" (caso raro), manejamos esto intentando
+    // reemplazar comas por punto solo si hay exactamente una coma antes de la letra.
+    // Regla simple: sustituir ',' por '.' siempre (más robusto para tus datos).
+    s = s.replace(/\s+/g, "");
+    s = s.replace(",", ".");
+    // Extraer número y unidad (puede no tener unidad)
+    const m = s.match(/^([\d.]+)\s*([KMGTPEkKmMtTpP]?)$/i);
+    if (!m) {
+        // intentar parse directo
+        const n = parseFloat(s.replace(/[^\d.-]/g, ""));
+        return Number.isFinite(n) ? n : 0;
+    }
+    const num = parseFloat(m[1]);
+    const unit = (m[2] || "").toUpperCase();
+    return num * (exports.UNIT_MAP[unit] ?? 1);
+}
+/**
+ * Formatea valores grandes a unidades legibles: 644000000000 -> "644G"
+ * Devuelve con hasta 2 decimales cuando aplica.
+ */
+function formatUnit(value) {
+    if (!Number.isFinite(value))
+        return "0";
+    const units = [
+        { letter: "P", size: 1e15 },
+        { letter: "T", size: 1e12 },
+        { letter: "G", size: 1e9 },
+        { letter: "M", size: 1e6 },
+        { letter: "K", size: 1e3 },
+    ];
+    for (const u of units) {
+        if (Math.abs(value) >= u.size) {
+            const n = value / u.size;
+            // Si es entero después de dividir, no mostramos decimales; si no, mostramos 2 decimales
+            const text = n % 1 === 0 ? n.toFixed(0) : n.toFixed(2).replace(/\.00$/, "");
+            return `${text}${u.letter}`;
+        }
+    }
+    return Math.round(value).toString();
+}
+/**
+ * Cálculo exacto de tropas necesarias (sin unidades) y con redondeo hacia arriba.
+ */
+function calculateNeededTroopsFromWallValue(wallValue, bonusPercent) {
+    const mult = 1 + bonusPercent / 100;
+    if (mult <= 0)
+        return Infinity;
+    return Math.ceil(wallValue / mult);
+}
+function createEmbed(title, description, color = 0x00ADEF) {
+    return new discord_js_1.EmbedBuilder()
+        .setTitle(title)
+        .setDescription(description)
+        .setColor(color)
+        .setTimestamp();
+}
+function calculatePower(troops, bonusPercent) {
+    return troops * (1 + bonusPercent / 100);
+}
+exports.WALL_DATA = [
+    { "level": 1, "vp": "20", "wall": "70", "upgradeCost": "0", "totalCost": "0" },
+    { "level": 2, "vp": "22", "wall": "84", "upgradeCost": "10", "totalCost": "10" },
+    { "level": 3, "vp": "24", "wall": "101", "upgradeCost": "12", "totalCost": "22" },
+    { "level": 4, "vp": "27", "wall": "121", "upgradeCost": "14", "totalCost": "36" },
+    { "level": 5, "vp": "30", "wall": "145", "upgradeCost": "17", "totalCost": "53" },
+    { "level": 6, "vp": "34", "wall": "174", "upgradeCost": "21", "totalCost": "74" },
+    { "level": 7, "vp": "38", "wall": "209", "upgradeCost": "25", "totalCost": "99" },
+    { "level": 8, "vp": "42", "wall": "251", "upgradeCost": "30", "totalCost": "129" },
+    { "level": 9, "vp": "47", "wall": "301", "upgradeCost": "36", "totalCost": "165" },
+    { "level": 10, "vp": "53", "wall": "361", "upgradeCost": "43", "totalCost": "208" },
+    { "level": 11, "vp": "59", "wall": "433", "upgradeCost": "52", "totalCost": "260" },
+    { "level": 12, "vp": "66", "wall": "520", "upgradeCost": "62", "totalCost": "322" },
+    { "level": 13, "vp": "73", "wall": "624", "upgradeCost": "74", "totalCost": "396" },
+    { "level": 14, "vp": "82", "wall": "749", "upgradeCost": "89", "totalCost": "485" },
+    { "level": 15, "vp": "91", "wall": "899", "upgradeCost": "106", "totalCost": "591" },
+    { "level": 16, "vp": "102", "wall": "1.07K", "upgradeCost": "128", "totalCost": "719" },
+    { "level": 17, "vp": "114", "wall": "1.29K", "upgradeCost": "154", "totalCost": "873" },
+    { "level": 18, "vp": "127", "wall": "1.55K", "upgradeCost": "184", "totalCost": "1.05K" },
+    { "level": 19, "vp": "141", "wall": "1.86K", "upgradeCost": "221", "totalCost": "1.27K" },
+    { "level": 20, "vp": "158", "wall": "2.23K", "upgradeCost": "266", "totalCost": "1.54K" },
+    { "level": 21, "vp": "176", "wall": "2.68K", "upgradeCost": "319", "totalCost": "1.86K" },
+    { "level": 22, "vp": "196", "wall": "3.21K", "upgradeCost": "383", "totalCost": "2.24K" },
+    { "level": 23, "vp": "219", "wall": "3.86K", "upgradeCost": "460", "totalCost": "2.70K" },
+    { "level": 24, "vp": "244", "wall": "4.63K", "upgradeCost": "552", "totalCost": "3.25K" },
+    { "level": 25, "vp": "272", "wall": "5.56K", "upgradeCost": "662", "totalCost": "3.92K" },
+    { "level": 26, "vp": "304", "wall": "6.67K", "upgradeCost": "794", "totalCost": "4.71K" },
+    { "level": 27, "vp": "338", "wall": "8.01K", "upgradeCost": "953", "totalCost": "5.56K" },
+    { "level": 28, "vp": "377", "wall": "9.61K", "upgradeCost": "1.14K", "totalCost": "6.81K" },
+    { "level": 29, "vp": "421", "wall": "11.5K", "upgradeCost": "1.37K", "totalCost": "8.18K" },
+    { "level": 30, "vp": "469", "wall": "13.8K", "upgradeCost": "1.64K", "totalCost": "9.82K" },
+    { "level": 31, "vp": "523", "wall": "16.6K", "upgradeCost": "1.97K", "totalCost": "11.8K" },
+    { "level": 32, "vp": "584", "wall": "19.9K", "upgradeCost": "2.37K", "totalCost": "14.1K" },
+    { "level": 33, "vp": "651", "wall": "23.9K", "upgradeCost": "2.84K", "totalCost": "17.0K" },
+    { "level": 34, "vp": "726", "wall": "28.7K", "upgradeCost": "3.41K", "totalCost": "20.4K" },
+    { "level": 35, "vp": "809", "wall": "34.4K", "upgradeCost": "4.10K", "totalCost": "24.5K" },
+    { "level": 36, "vp": "902", "wall": "41.3K", "upgradeCost": "4.92K", "totalCost": "29.4K" },
+    { "level": 37, "vp": "1.00K", "wall": "49.6K", "upgradeCost": "5.90K", "totalCost": "35.3K" },
+    { "level": 38, "vp": "1.12K", "wall": "59.5K", "upgradeCost": "7.08K", "totalCost": "42.4K" },
+    { "level": 39, "vp": "1.25K", "wall": "71.4K", "upgradeCost": "8.50K", "totalCost": "50.9K" },
+    { "level": 40, "vp": "1.39K", "wall": "85.7K", "upgradeCost": "10.2K", "totalCost": "61.1K" },
+    { "level": 41, "vp": "1.55K", "wall": "102K", "upgradeCost": "12.2K", "totalCost": "73.3K" },
+    { "level": 42, "vp": "1.73K", "wall": "123K", "upgradeCost": "14.6K", "totalCost": "88.0K" },
+    { "level": 43, "vp": "1.93K", "wall": "148K", "upgradeCost": "17.6K", "totalCost": "105K" },
+    { "level": 44, "vp": "2.15K", "wall": "177K", "upgradeCost": "21.1K", "totalCost": "126K" },
+    { "level": 45, "vp": "2.40K", "wall": "213K", "upgradeCost": "25.3K", "totalCost": "152K" },
+    { "level": 46, "vp": "2.68K", "wall": "255K", "upgradeCost": "30.4K", "totalCost": "182K" },
+    { "level": 47, "vp": "2.99K", "wall": "307K", "upgradeCost": "36.5K", "totalCost": "219K" },
+    { "level": 48, "vp": "3.33K", "wall": "368K", "upgradeCost": "43.8K", "totalCost": "263K" },
+    { "level": 49, "vp": "3.71K", "wall": "442K", "upgradeCost": "52.6K", "totalCost": "315K" },
+    { "level": 50, "vp": "4.14K", "wall": "530K", "upgradeCost": "63.1K", "totalCost": "378K" },
+    { "level": 51, "vp": "4.62K", "wall": "636K", "upgradeCost": "75.8K", "totalCost": "454K" },
+    { "level": 52, "vp": "5.15K", "wall": "764K", "upgradeCost": "90.1K", "totalCost": "545K" },
+    { "level": 53, "vp": "5.74K", "wall": "917K", "upgradeCost": "109K", "totalCost": "654K" },
+    { "level": 54, "vp": "6.40K", "wall": "1.10M", "upgradeCost": "131K", "totalCost": "785K" },
+    { "level": 55, "vp": "7.14K", "wall": "1.32M", "upgradeCost": "157K", "totalCost": "942K" },
+    { "level": 56, "vp": "7.56K", "wall": "1.58M", "upgradeCost": "188K", "totalCost": "1.13M" },
+    { "level": 57, "vp": "8.88K", "wall": "1.90M", "upgradeCost": "226K", "totalCost": "1.35M" },
+    { "level": 58, "vp": "9.90K", "wall": "2.28M", "upgradeCost": "271K", "totalCost": "1.62M" },
+    { "level": 59, "vp": "11.0K", "wall": "2.73M", "upgradeCost": "326K", "totalCost": "1.95M" },
+    { "level": 60, "vp": "12.3K", "wall": "3.28M", "upgradeCost": "391K", "totalCost": "2.34M" },
+    { "level": 61, "vp": "13.7K", "wall": "3.94M", "upgradeCost": "469K", "totalCost": "2.81M" },
+    { "level": 62, "vp": "15.3K", "wall": "4.73M", "upgradeCost": "563K", "totalCost": "3.37M" },
+    { "level": 63, "vp": "17.0K", "wall": "5.67M", "upgradeCost": "676K", "totalCost": "4.05M" },
+    { "level": 64, "vp": "19.0K", "wall": "6.81M", "upgradeCost": "811K", "totalCost": "4.86M" },
+    { "level": 65, "vp": "21.2K", "wall": "8.18M", "upgradeCost": "973K", "totalCost": "5.84M" },
+    { "level": 66, "vp": "23.6K", "wall": "9.81M", "upgradeCost": "1.16M", "totalCost": "7.00M" },
+    { "level": 67, "vp": "26.3K", "wall": "11.7M", "upgradeCost": "1.40M", "totalCost": "8.40M" },
+    { "level": 68, "vp": "29.4K", "wall": "14.1M", "upgradeCost": "1.68M", "totalCost": "10.1M" },
+    { "level": 69, "vp": "32.7K", "wall": "16.9M", "upgradeCost": "2.01M", "totalCost": "12.1M" },
+    { "level": 70, "vp": "36.5K", "wall": "20.3M", "upgradeCost": "2.42M", "totalCost": "14.5M" },
+    { "level": 71, "vp": "40.7K", "wall": "24.4M", "upgradeCost": "2.90M", "totalCost": "17.4M" },
+    { "level": 72, "vp": "45.4K", "wall": "29.3M", "upgradeCost": "3.48M", "totalCost": "20.9M" },
+    { "level": 73, "vp": "50.6K", "wall": "35.1M", "upgradeCost": "4.18M", "totalCost": "25.0M" },
+    { "level": 74, "vp": "56.5K", "wall": "42.1M", "upgradeCost": "5.02M", "totalCost": "30.1M" },
+    { "level": 75, "vp": "63.0K", "wall": "50.6M", "upgradeCost": "6.02M", "totalCost": "36.1M" },
+    { "level": 76, "vp": "70.2K", "wall": "60.7M", "upgradeCost": "7.23M", "totalCost": "43.3M" },
+    { "level": 77, "vp": "78.3K", "wall": "72.9M", "upgradeCost": "8.68M", "totalCost": "54.0M" },
+    { "level": 78, "vp": "87.3K", "wall": "87.4M", "upgradeCost": "10.4M", "totalCost": "62.4M" },
+    { "level": 79, "vp": "97.3K", "wall": "104M", "upgradeCost": "12.5M", "totalCost": "74.9M" },
+    { "level": 80, "vp": "108K", "wall": "125M", "upgradeCost": "15.0M", "totalCost": "89.9M" },
+    { "level": 81, "vp": "121K", "wall": "151M", "upgradeCost": "18.0M", "totalCost": "107M" },
+    { "level": 82, "vp": "134K", "wall": "181M", "upgradeCost": "21.6M", "totalCost": "129M" },
+    { "level": 83, "vp": "150K", "wall": "217M", "upgradeCost": "25.9M", "totalCost": "155M" },
+    { "level": 84, "vp": "167K", "wall": "261M", "upgradeCost": "31.1M", "totalCost": "186M" },
+    { "level": 85, "vp": "187K", "wall": "313M", "upgradeCost": "37.3M", "totalCost": "223M" },
+    { "level": 86, "vp": "208K", "wall": "376M", "upgradeCost": "44.7M", "totalCost": "268M" },
+    { "level": 87, "vp": "232K", "wall": "451M", "upgradeCost": "53.7M", "totalCost": "322M" },
+    { "level": 88, "vp": "259K", "wall": "541M", "upgradeCost": "64.5M", "totalCost": "386M" },
+    { "level": 89, "vp": "289K", "wall": "650M", "upgradeCost": "77.4M", "totalCost": "463M" },
+    { "level": 90, "vp": "322K", "wall": "780M", "upgradeCost": "92.8M", "totalCost": "556M" },
+    { "level": 91, "vp": "359K", "wall": "936M", "upgradeCost": "111M", "totalCost": "668M" },
+    { "level": 92, "vp": "400K", "wall": "1.12G", "upgradeCost": "133M", "totalCost": "801M" },
+    { "level": 93, "vp": "447K", "wall": "1.34G", "upgradeCost": "160M", "totalCost": "962M" },
+    { "level": 94, "vp": "498K", "wall": "1.61G", "upgradeCost": "192M", "totalCost": "1.15G" },
+    { "level": 95, "vp": "555K", "wall": "1.94G", "upgradeCost": "231M", "totalCost": "1.38G" },
+    { "level": 96, "vp": "619K", "wall": "2.32G", "upgradeCost": "277M", "totalCost": "1.66G" },
+    { "level": 97, "vp": "690K", "wall": "2.79G", "upgradeCost": "332M", "totalCost": "1.99G" },
+    { "level": 98, "vp": "770K", "wall": "3.35G", "upgradeCost": "399M", "totalCost": "2.39G" },
+    { "level": 99, "vp": "858K", "wall": "4.02G", "upgradeCost": "479M", "totalCost": "2.87G" },
+    { "level": 100, "vp": "957K", "wall": "4.83G", "upgradeCost": "575M", "totalCost": "3.44G" },
+    { "level": 101, "vp": "1.06M", "wall": "5.79G", "upgradeCost": "690M", "totalCost": "4.13G" },
+    { "level": 102, "vp": "1.19M", "wall": "6.95G", "upgradeCost": "828M", "totalCost": "4.96G" },
+    { "level": 103, "vp": "1.32M", "wall": "8.34G", "upgradeCost": "953M", "totalCost": "5.95G" },
+    { "level": 104, "vp": "1.48M", "wall": "10.0G", "upgradeCost": "1.19G", "totalCost": "7.14G" },
+    { "level": 105, "vp": "1.65M", "wall": "12.0G", "upgradeCost": "1.43G", "totalCost": "8.57G" },
+    { "level": 106, "vp": "1.84M", "wall": "14.4G", "upgradeCost": "1.71G", "totalCost": "10.2G" },
+    { "level": 107, "vp": "2.05M", "wall": "17.3G", "upgradeCost": "2.06G", "totalCost": "12.3G" },
+    { "level": 108, "vp": "2.28M", "wall": "20.7G", "upgradeCost": "2.47G", "totalCost": "14.8G" },
+    { "level": 109, "vp": "2.55M", "wall": "24.9G", "upgradeCost": "2.96G", "totalCost": "17.7G" },
+    { "level": 110, "vp": "2.84M", "wall": "29.9G", "upgradeCost": "3.56G", "totalCost": "21.3G" },
+    { "level": 111, "vp": "3.17M", "wall": "35.8G", "upgradeCost": "4.27G", "totalCost": "25.6G" },
+    { "level": 112, "vp": "3.53M", "wall": "43.0G", "upgradeCost": "5.12G", "totalCost": "30.7G" },
+    { "level": 113, "vp": "3.94M", "wall": "51.6G", "upgradeCost": "6.15G", "totalCost": "36.8G" },
+    { "level": 114, "vp": "4.39M", "wall": "62.0G", "upgradeCost": "7.38G", "totalCost": "44.2G" },
+    { "level": 115, "vp": "4.90M", "wall": "74.4G", "upgradeCost": "8.86G", "totalCost": "53.1G" },
+    { "level": 116, "vp": "5.46M", "wall": "89.3G", "upgradeCost": "10.6G", "totalCost": "63.7G" },
+    { "level": 117, "vp": "6.09M", "wall": "107G", "upgradeCost": "12.7G", "totalCost": "76.4G" },
+    { "level": 118, "vp": "6.79M", "wall": "128G", "upgradeCost": "15.3G", "totalCost": "91.7G" },
+    { "level": 119, "vp": "7.57M", "wall": "154G", "upgradeCost": "18.3G", "totalCost": "110G" },
+    { "level": 120, "vp": "8.44M", "wall": "185G", "upgradeCost": "22.0G", "totalCost": "132G" },
+    { "level": 121, "vp": "9.41M", "wall": "222G", "upgradeCost": "26.4G", "totalCost": "158G" },
+    { "level": 122, "vp": "10.5M", "wall": "266G", "upgradeCost": "31.7G", "totalCost": "190G" },
+    { "level": 123, "vp": "11.7M", "wall": "319G", "upgradeCost": "38.1G", "totalCost": "228G" },
+    { "level": 124, "vp": "13.0M", "wall": "383G", "upgradeCost": "45.7G", "totalCost": "274G" },
+    { "level": 125, "vp": "14.5M", "wall": "460G", "upgradeCost": "54.8G", "totalCost": "328G" },
+    { "level": 126, "vp": "16.2M", "wall": "552G", "upgradeCost": "65.8G", "totalCost": "394G" },
+    { "level": 127, "vp": "18.0M", "wall": "663G", "upgradeCost": "79.0G", "totalCost": "473G" },
+    { "level": 128, "vp": "20.1M", "wall": "796G", "upgradeCost": "94.8G", "totalCost": "568G" },
+    { "level": 129, "vp": "22.5M", "wall": "955G", "upgradeCost": "113G", "totalCost": "681G" },
+    { "level": 130, "vp": "25.0M", "wall": "1.14T", "upgradeCost": "136G", "totalCost": "818G" },
+    { "level": 131, "vp": "27.9M", "wall": "1.37T", "upgradeCost": "163G", "totalCost": "981G" },
+    { "level": 132, "vp": "31.1M", "wall": "1.65T", "upgradeCost": "196G", "totalCost": "1.17T" },
+    { "level": 133, "vp": "34.7M", "wall": "1.98T", "upgradeCost": "235G", "totalCost": "1.41T" },
+    { "level": 134, "vp": "38.7M", "wall": "2.37T", "upgradeCost": "283G", "totalCost": "1.69T" },
+    { "level": 135, "vp": "43.2M", "wall": "2.85T", "upgradeCost": "339G", "totalCost": "2.03T" },
+    { "level": 136, "vp": "48.2M", "wall": "3.42T", "upgradeCost": "407G", "totalCost": "2.44T" },
+    { "level": 137, "vp": "53.7M", "wall": "4.10T", "upgradeCost": "489G", "totalCost": "2.93T" },
+    { "level": 138, "vp": "59.9M", "wall": "4.93T", "upgradeCost": "587G", "totalCost": "3.51T" },
+    { "level": 139, "vp": "66.8M", "wall": "5.91T", "upgradeCost": "704G", "totalCost": "4.22T" },
+    { "level": 140, "vp": "74.5M", "wall": "7.09T", "upgradeCost": "845G", "totalCost": "5.06T" },
+    { "level": 141, "vp": "83.0M", "wall": "8.51T", "upgradeCost": "1.01T", "totalCost": "6.08T" },
+    { "level": 142, "vp": "92.6M", "wall": "10.2T", "upgradeCost": "1.21T", "totalCost": "7.29T" },
+    { "level": 143, "vp": "103M", "wall": "12.2T", "upgradeCost": "1.46T", "totalCost": "8.75T" },
+    { "level": 144, "vp": "115M", "wall": "14.7T", "upgradeCost": "1.75T", "totalCost": "10.5T" },
+    { "level": 145, "vp": "128M", "wall": "17.6T", "upgradeCost": "2.10T", "totalCost": "12.6T" },
+    { "level": 146, "vp": "143M", "wall": "21.1T", "upgradeCost": "2.52T", "totalCost": "15.1T" },
+    { "level": 147, "vp": "159M", "wall": "25.4T", "upgradeCost": "3.02T", "totalCost": "18.1T" },
+    { "level": 148, "vp": "178M", "wall": "30.3T", "upgradeCost": "3.63T", "totalCost": "21.7T" },
+    { "level": 149, "vp": "198M", "wall": "36.6T", "upgradeCost": "4.36T", "totalCost": "26.1T" },
+    { "level": 150, "vp": "221M", "wall": "43.9T", "upgradeCost": "5.23T", "totalCost": "31.3T" },
+    { "level": 151, "vp": "246M", "wall": "52.7T", "upgradeCost": "6.28T", "totalCost": "37.6T" },
+    { "level": 152, "vp": "275M", "wall": "63.2T", "upgradeCost": "7.53T", "totalCost": "45.1T" },
+    { "level": 153, "vp": "306M", "wall": "75.9T", "upgradeCost": "9.04T", "totalCost": "54.1T" },
+    { "level": 154, "vp": "342M", "wall": "91.1T", "upgradeCost": "10.8T", "totalCost": "65.0T" },
+    { "level": 155, "vp": "381M", "wall": "109T", "upgradeCost": "13.0T", "totalCost": "78.0T" },
+    { "level": 156, "vp": "425M", "wall": "131T", "upgradeCost": "15.6T", "totalCost": "93.6T" },
+    { "level": 157, "vp": "474M", "wall": "157T", "upgradeCost": "18.7T", "totalCost": "112T" },
+    { "level": 158, "vp": "528M", "wall": "189T", "upgradeCost": "22.5T", "totalCost": "134T" },
+    { "level": 159, "vp": "589M", "wall": "226T", "upgradeCost": "27.0T", "totalCost": "161T" },
+    { "level": 160, "vp": "657M", "wall": "272T", "upgradeCost": "32.4T", "totalCost": "194T" },
+    { "level": 161, "vp": "732M", "wall": "326T", "upgradeCost": "38.8T", "totalCost": "233T" },
+    { "level": 162, "vp": "816M", "wall": "391T", "upgradeCost": "46.6T", "totalCost": "279T" },
+    { "level": 163, "vp": "908M", "wall": "470T", "upgradeCost": "55.9T", "totalCost": "335T" },
+    { "level": 164, "vp": "1.01G", "wall": "564T", "upgradeCost": "67.1T", "totalCost": "402T" },
+    { "level": 165, "vp": "1.13G", "wall": "677T", "upgradeCost": "80.6T", "totalCost": "483T" },
+    { "level": 166, "vp": "1.26G", "wall": "812T", "upgradeCost": "96.7T", "totalCost": "580T" },
+    { "level": 167, "vp": "1.40G", "wall": "975T", "upgradeCost": "116T", "totalCost": "696T" },
+    { "level": 168, "vp": "1.57G", "wall": "1.17P", "upgradeCost": "139T", "totalCost": "835T" },
+    { "level": 169, "vp": "1.75G", "wall": "1.40P", "upgradeCost": "167T", "totalCost": "1.01P" },
+    { "level": 170, "vp": "1.95G", "wall": "1.68P", "upgradeCost": "200T", "totalCost": "1.21P" },
+    { "level": 171, "vp": "2.18G", "wall": "2.02P", "upgradeCost": "241T", "totalCost": "1.45P" },
+    { "level": 172, "vp": "2.42G", "wall": "2.42P", "upgradeCost": "289T", "totalCost": "1.74P" },
+    { "level": 173, "vp": "2.70G", "wall": "2.91P", "upgradeCost": "346T", "totalCost": "2.08P" },
+    { "level": 174, "vp": "3.02G", "wall": "3.49P", "upgradeCost": "416T", "totalCost": "2.49P" },
+    { "level": 175, "vp": "3.36G", "wall": "4.19P", "upgradeCost": "499T", "totalCost": "2.99P" },
+    { "level": 176, "vp": "3.74G", "wall": "5.03P", "upgradeCost": "599T", "totalCost": "3.59P" },
+    { "level": 177, "vp": "4.18G", "wall": "6.03P", "upgradeCost": "718T", "totalCost": "4.31P" },
+    { "level": 178, "vp": "4.66G", "wall": "7.24P", "upgradeCost": "862T", "totalCost": "5.17P" },
+    { "level": 179, "vp": "5.18G", "wall": "8.69P", "upgradeCost": "1.03P", "totalCost": "6.21P" },
+    { "level": 180, "vp": "5.78G", "wall": "10.4P", "upgradeCost": "1.24P", "totalCost": "7.45P" },
+    { "level": 181, "vp": "6.44G", "wall": "12.5P", "upgradeCost": "1.49P", "totalCost": "8.94P" },
+    { "level": 182, "vp": "7.20G", "wall": "15.0P", "upgradeCost": "1.79P", "totalCost": "10.7P" },
+    { "level": 183, "vp": "8.02G", "wall": "18.0P", "upgradeCost": "2.14P", "totalCost": "12.9P" },
+    { "level": 184, "vp": "8.94G", "wall": "21.6P", "upgradeCost": "2.57P", "totalCost": "15.4P" },
+    { "level": 185, "vp": "10.0G", "wall": "25.9P", "upgradeCost": "3.09P", "totalCost": "18.5P" },
+    { "level": 186, "vp": "11.1G", "wall": "31.1P", "upgradeCost": "3.71P", "totalCost": "22.2P" },
+    { "level": 187, "vp": "12.4G", "wall": "37.3P", "upgradeCost": "4.45P", "totalCost": "26.7P" },
+    { "level": 188, "vp": "13.8G", "wall": "44.8P", "upgradeCost": "5.34P", "totalCost": "32.0P" },
+    { "level": 189, "vp": "15.4G", "wall": "53.8P", "upgradeCost": "6.40P", "totalCost": "38.4P" },
+    { "level": 190, "vp": "17.2G", "wall": "64.6P", "upgradeCost": "7.68P", "totalCost": "46.1P" },
+    { "level": 191, "vp": "19.2G", "wall": "77.5P", "upgradeCost": "9.22P", "totalCost": "55.3P" },
+    { "level": 192, "vp": "21.4G", "wall": "93.0P", "upgradeCost": "11.0P", "totalCost": "66.4P" },
+    { "level": 193, "vp": "23.8G", "wall": "111P", "upgradeCost": "13.3P", "totalCost": "79.4P" },
+    { "level": 194, "vp": "26.6G", "wall": "133P", "upgradeCost": "15.9P", "totalCost": "95.6P" },
+    { "level": 195, "vp": "29.6G", "wall": "160P", "upgradeCost": "19.1P", "totalCost": "115P" },
+    { "level": 196, "vp": "33.0G", "wall": "192P", "upgradeCost": "22.9P", "totalCost": "138P" },
+    { "level": 197, "vp": "36.8G", "wall": "231P", "upgradeCost": "27.5P", "totalCost": "165P" },
+    { "level": 198, "vp": "41.0G", "wall": "277P", "upgradeCost": "33.0P", "totalCost": "198P" },
+    { "level": 199, "vp": "45.8G", "wall": "333P", "upgradeCost": "39.7P", "totalCost": "238P" },
+    { "level": 200, "vp": "51.0G", "wall": "400P", "upgradeCost": "47.6P", "totalCost": "286P" }
+];
